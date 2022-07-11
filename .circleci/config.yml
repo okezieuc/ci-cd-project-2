@@ -1,5 +1,20 @@
 version: 2.1
 
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Destroy backend cloudformation
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Destroy frontend cloudformation
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+
 jobs:
   build-frontend:
     docker:
@@ -63,6 +78,41 @@ jobs:
             npm install
             npm run test
 
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+                 --template-file .circleci/files/backend.yml \
+                 --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                 --tags project=udapeople
+      - run:
+          name: Ensure front-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+                 --template-file .circleci/files/frontend.yml \
+                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                 --tags project=udapeople
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            cd .circleci/ansible
+            aws ec2 describe-instances \
+                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --output text >> inventory
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+      - destroy-evironment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
+
 workflows:
   default:
     jobs:
@@ -72,3 +122,5 @@ workflows:
           requires: [build-frontend]
       - test-backend:
           requires: [build-backend]
+      - deploy-infrastructure:
+          requires: [build-frontend, test-frontend, build-backend, test-backend]
