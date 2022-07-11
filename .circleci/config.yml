@@ -84,6 +84,15 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install tar and gzip
+          command: |
+            yum update -y
+            yum install -y tar gzip
+            curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
+            yum install -y nodejs
+      - attach_workspace:
+          at: ~/
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
