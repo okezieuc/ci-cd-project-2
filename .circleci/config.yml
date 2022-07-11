@@ -110,7 +110,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-evironment:
+      - destroy-environment:
           workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 workflows:
