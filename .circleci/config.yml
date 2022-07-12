@@ -138,7 +138,7 @@ jobs:
             curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
             yum install -y nodejs
             pip install awscli
-            apk add --update ansible 
+            pip install --user ansible 
       - run:
           name: Configure server
           command: |
