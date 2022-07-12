@@ -90,8 +90,6 @@ jobs:
             yum install -y tar gzip
             curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
             yum install -y nodejs
-      - attach_workspace:
-          at: ~/
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -109,12 +107,12 @@ jobs:
                  --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
                  --tags project=udapeople
       - run:
-          name: Add back-end ip to ansible inventory
+          name: Add back-end ip to ansible inventory and print to
           command: |
             cd .circleci/ansible
             aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --output text >> inventory.txt
+                --output text >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
