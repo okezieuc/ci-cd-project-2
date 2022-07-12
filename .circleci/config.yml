@@ -138,6 +138,14 @@ jobs:
           command: |
             pip install awscli
       - run:
+          name: Add back-end ip to ansible inventory again
+          command: |
+
+            aws ec2 describe-instances \
+              --query "Reservations[*].Instances[*].PublicIpAddress" \
+              --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - run:
           name: Configure server
           command: |
             pwd
