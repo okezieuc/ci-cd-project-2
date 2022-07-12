@@ -151,6 +151,7 @@ jobs:
             pwd
             ls
             cat ./.circleci/ansible/inventory.txt
+            cat .circleci/ansible/configure-server.yml
             ansible-playbook -i ./.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
       - destroy-environment
 
