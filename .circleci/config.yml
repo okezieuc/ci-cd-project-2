@@ -121,6 +121,31 @@ jobs:
             - project/.circleci/ansible/inventory.txt
       - destroy-environment
 
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["8f:f4:03:40:61:01:b9:b8:53:90:54:0a:50:1c:a4:cc"] 
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            yum update -y
+            yum install -y tar gzip
+            curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
+            yum install -y nodejs
+            pip install awscli
+            apk add --update ansible 
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
+      - destroy-environment
+
 workflows:
   default:
     jobs:
@@ -132,3 +157,5 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           requires: [build-frontend, test-frontend, build-backend, test-backend]
+      - configure-infrastructure
+          requires: [deploy-infrastructure]
