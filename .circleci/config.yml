@@ -1,5 +1,22 @@
 version: 2.1
 
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Destroy backend cloudformation
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Destroy frontend cloudformation
+          when: on_fail
+          command: |
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+
 jobs:
   build-frontend:
     docker:
@@ -63,47 +80,94 @@ jobs:
             npm install
             npm run test
 
-  scan-frontend:
+  deploy-infrastructure:
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-build]
       - run:
-          name: Scan frontend
+          name: Install tar and gzip
           command: |
-            cd frontend
-            npm install
-            npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
+            yum update -y
+            yum install -y tar gzip
+            curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
+            yum install -y nodejs
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+                 --template-file .circleci/files/backend.yml \
+                 --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                 --tags project=udapeople
+      - run:
+          name: Ensure front-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+                 --template-file .circleci/files/frontend.yml \
+                 --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+                 --tags project=udapeople
+      - run:
+          name: Add back-end ip to ansible inventory and print to
+          command: |
 
-  scan-backend:
+            aws ec2 describe-instances \
+              --query "Reservations[*].Instances[*].PublicIpAddress" \
+              --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .circleci/ansible/inventory.txt
+      - destroy-environment
+
+  configure-infrastructure:
     docker:
-      - image: circleci/node:13.8.0
+      - image: python:3.10.5-alpine3.16
     steps:
       - checkout
-      - restore_cache:
-          keys: [backend-build]
+      - add_ssh_keys:
+          fingerprints: ["8f:f4:03:40:61:01:b9:b8:53:90:54:0a:50:1c:a4:cc"]
+      - attach_workspace:
+          at: ~/
       - run:
-          name: Scan backend
+          name: Install ansible
           command: |
-            cd backend
-            npm install
-            npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
+            apk add --update ansible
+      - run:
+          name: Install aws cli
+          command: |
+            pip install awscli
+      - run:
+          name: Add back-end ip to ansible inventory again
+          command: |
+
+            aws ec2 describe-instances \
+              --query "Reservations[*].Instances[*].PublicIpAddress" \
+              --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - run:
+          name: Configure server
+          command: |
+            pwd
+            ls
+            cat ./.circleci/ansible/inventory.txt
+            cat .circleci/ansible/configure-server.yml
+            ansible-playbook -i ./.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+      - destroy-environment
 
 workflows:
   default:
     jobs:
       - build-frontend
       - build-backend
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-      - scan-backend:
-          requires: [build-backend]
+      #- test-frontend:
+      #    requires: [build-frontend]
+      #- test-backend:
+      #    requires: [build-backend]
+      - deploy-infrastructure:
+          #  requires: [build-frontend, test-frontend, build-backend, test-backend]
+          requires: [build-frontend, build-backend]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
