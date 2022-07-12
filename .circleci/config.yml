@@ -157,5 +157,5 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           requires: [build-frontend, test-frontend, build-backend, test-backend]
-      - configure-infrastructure
+      - configure-infrastructure:
           requires: [deploy-infrastructure]
