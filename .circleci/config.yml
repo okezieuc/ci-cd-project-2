@@ -127,18 +127,17 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["8f:f4:03:40:61:01:b9:b8:53:90:54:0a:50:1c:a4:cc"] 
+          fingerprints: ["8f:f4:03:40:61:01:b9:b8:53:90:54:0a:50:1c:a4:cc"]
       - attach_workspace:
           at: ~/
       - run:
-          name: Install dependencies
+          name: Install ansible
           command: |
-            yum update -y
-            yum install -y tar gzip
-            curl -sL https://rpm.nodesource.com/setup_13.x |  bash -
-            yum install -y nodejs
+            pip install --user ansible
+      - run:
+          name: Install aws cli
+          command: |
             pip install awscli
-            pip install --user ansible 
       - run:
           name: Configure server
           command: |
