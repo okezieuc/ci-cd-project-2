@@ -323,3 +323,5 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-backend:
           requires: [configure-infrastructure]
+      - smoke-test:
+          requires: [deploy-backend]
