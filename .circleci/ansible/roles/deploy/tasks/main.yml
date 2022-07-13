@@ -26,7 +26,7 @@
 
 - name: "Copy artifact to ~/backend directory"
   copy:
-    src: ~/artifact.tar.gz
+    src: /root/project/artifact.tar.gz
     dest: ~/backend
     backup: yes
 
