@@ -201,7 +201,7 @@ jobs:
           command: |
             yum update -y
             yum install -y tar gzip
-            yum install -y nodejs npm
+            yum install -y nodejs
       - run:
           name: Get backend url
           command: |
