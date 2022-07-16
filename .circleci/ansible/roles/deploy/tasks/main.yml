@@ -41,10 +41,10 @@
 #    npm install
 #  args:
 #    chdir: ~/backend
-
+# pm2 stop default
 - name: "Start server"
-  shell: |
-    pm2 stop default
+  shell: |  
+    npm run migrations
     pm2 start npm -- start
   args:
     chdir: ~/backend
