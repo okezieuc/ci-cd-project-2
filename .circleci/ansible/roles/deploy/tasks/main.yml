@@ -42,10 +42,12 @@
 #  args:
 #    chdir: ~/backend
 
+# pm2 stop default
+# pm2 start npm -- start
+
 - name: "Start server"
   shell: |
-    pm2 stop default
-    pm2 start npm -- start
+    npm run start
   args:
     chdir: ~/backend
   environment:
