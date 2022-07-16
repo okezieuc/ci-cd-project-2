@@ -330,7 +330,8 @@ jobs:
               else
                 return 1
               fi
-      - destroy-environment
+      # Uncomment the following line
+      #- destroy-environment
 
 workflows:
   default:
