@@ -36,11 +36,11 @@
   args:
     chdir: ~/backend
 
-- name: "Install dependencies"
-  shell: |
-    npm install
-  args:
-    chdir: ~/backend
+#- name: "Install dependencies"
+#  shell: |
+#    npm install
+#  args:
+#    chdir: ~/backend
 
 - name: "Start server"
   shell: |
