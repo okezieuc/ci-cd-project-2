@@ -259,9 +259,17 @@ jobs:
 
   smoke-test:
     docker:
-      - image: amazon/aws-cli
+      - image: python:3.10-alpine3.16
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update curl
+      - run:
+          name: Install AWS CLI
+          command: |
+            pip install awscli
       - run:
           name: Get backend url and run smoke test
           command: |
